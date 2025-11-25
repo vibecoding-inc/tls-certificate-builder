@@ -177,8 +177,9 @@ function _parseExtensions(extSeq) {
           ext.cA = bcAsn1.value[0].type === forge.asn1.Type.BOOLEAN &&
                    bcAsn1.value[0].value.charCodeAt(0) !== 0;
         }
-      } catch {
+      } catch (e) {
         // Ignore parsing errors for extensions
+        console.debug('Failed to parse basicConstraints extension:', e);
       }
     }
     
