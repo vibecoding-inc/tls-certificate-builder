@@ -4,6 +4,202 @@ import forge from 'node-forge';
  * Parse certificate files and extract certificate information
  */
 
+/**
+ * Parse certificate from ASN.1 with support for non-RSA keys (EC, EdDSA, etc.)
+ * This function manually extracts certificate information without relying on
+ * node-forge's certificateFromAsn1 which only supports RSA keys.
+ */
+function safeCertificateFromAsn1(asn1) {
+  // First try the standard method for RSA certificates
+  try {
+    return forge.pki.certificateFromAsn1(asn1);
+  } catch (e) {
+    // If it fails due to non-RSA key, parse manually
+    if (!e.message || !e.message.includes('Cannot read public key')) {
+      throw e;
+    }
+  }
+
+  // Manual parsing for certificates with non-RSA keys
+  // Certificate structure: SEQUENCE { tbsCertificate, signatureAlgorithm, signature }
+  const capture = {};
+  const certSeq = asn1.value;
+  
+  if (!certSeq || certSeq.length < 3) {
+    throw new Error('Invalid certificate structure');
+  }
+
+  const tbsCert = certSeq[0];
+  let idx = 0;
+
+  // Handle optional version field [0] EXPLICIT
+  if (tbsCert.value[idx].tagClass === forge.asn1.Class.CONTEXT_SPECIFIC) {
+    capture.certVersion = tbsCert.value[idx].value[0].value.charCodeAt(0);
+    idx++;
+  } else {
+    capture.certVersion = 0; // Default version is v1 (0)
+  }
+
+  // Serial number
+  capture.serialNumber = forge.util.createBuffer(tbsCert.value[idx++].value);
+
+  // Signature algorithm
+  capture.certSignatureOid = forge.asn1.derToOid(tbsCert.value[idx++].value[0].value);
+
+  // Issuer
+  capture.certIssuer = tbsCert.value[idx++];
+
+  // Validity
+  const validity = tbsCert.value[idx++];
+  capture.certValidity = {
+    notBefore: forge.asn1.utcTimeToDate(validity.value[0].value) || 
+               forge.asn1.generalizedTimeToDate(validity.value[0].value),
+    notAfter: forge.asn1.utcTimeToDate(validity.value[1].value) || 
+              forge.asn1.generalizedTimeToDate(validity.value[1].value)
+  };
+
+  // Subject
+  capture.certSubject = tbsCert.value[idx++];
+
+  // SubjectPublicKeyInfo - we'll store it but not try to decode
+  capture.certPublicKeyInfo = tbsCert.value[idx++];
+
+  // Extensions (if present)
+  if (idx < tbsCert.value.length && 
+      tbsCert.value[idx].tagClass === forge.asn1.Class.CONTEXT_SPECIFIC &&
+      tbsCert.value[idx].type === 3) {
+    capture.certExtensions = tbsCert.value[idx].value[0];
+  }
+
+  // Create certificate object manually
+  const cert = {
+    version: capture.certVersion + 1, // ASN.1 uses 0-based, display is 1-based
+    serialNumber: forge.util.bytesToHex(capture.serialNumber.getBytes()),
+    signatureOid: capture.certSignatureOid,
+    signature: forge.util.createBuffer(certSeq[2].value),
+    siginfo: {
+      algorithmOid: forge.asn1.derToOid(certSeq[1].value[0].value)
+    },
+    validity: {
+      notBefore: capture.certValidity.notBefore,
+      notAfter: capture.certValidity.notAfter
+    },
+    issuer: {
+      attributes: _parseRDNSequence(capture.certIssuer),
+      getField: function(sn) {
+        return this.attributes.find(attr => attr.shortName === sn || attr.name === sn);
+      },
+      hash: null
+    },
+    subject: {
+      attributes: _parseRDNSequence(capture.certSubject),
+      getField: function(sn) {
+        return this.attributes.find(attr => attr.shortName === sn || attr.name === sn);
+      },
+      hash: null
+    },
+    extensions: capture.certExtensions ? _parseExtensions(capture.certExtensions) : [],
+    publicKey: null, // We don't parse the public key for non-RSA certs
+    md: null
+  };
+
+  return cert;
+}
+
+/**
+ * Parse RDN (Relative Distinguished Name) sequence
+ */
+function _parseRDNSequence(rdn) {
+  const attributes = [];
+  
+  for (const rdnSet of rdn.value) {
+    for (const attrSeq of rdnSet.value) {
+      const oid = forge.asn1.derToOid(attrSeq.value[0].value);
+      const value = attrSeq.value[1].value;
+      const attr = {
+        type: oid,
+        value: value,
+        valueTagClass: attrSeq.value[1].type,
+        name: forge.pki.oids[oid] || oid,
+        shortName: _getShortName(oid)
+      };
+      attributes.push(attr);
+    }
+  }
+  
+  return attributes;
+}
+
+/**
+ * Get short name for OID
+ */
+function _getShortName(oid) {
+  const shortNames = {
+    '2.5.4.3': 'CN',
+    '2.5.4.6': 'C',
+    '2.5.4.7': 'L',
+    '2.5.4.8': 'ST',
+    '2.5.4.10': 'O',
+    '2.5.4.11': 'OU',
+    '2.5.4.5': 'serialNumber',
+    '1.2.840.113549.1.9.1': 'emailAddress'
+  };
+  return shortNames[oid] || forge.pki.oids[oid] || oid;
+}
+
+/**
+ * Parse certificate extensions
+ */
+function _parseExtensions(extSeq) {
+  const extensions = [];
+  
+  for (const extValue of extSeq.value) {
+    const ext = {
+      id: forge.asn1.derToOid(extValue.value[0].value),
+      critical: false,
+      value: null
+    };
+    
+    let valueIdx = 1;
+    if (extValue.value[1].type === forge.asn1.Type.BOOLEAN) {
+      ext.critical = extValue.value[1].value.charCodeAt(0) !== 0;
+      valueIdx = 2;
+    }
+    
+    ext.value = extValue.value[valueIdx].value;
+    ext.name = forge.pki.oids[ext.id] || ext.id;
+    
+    // Parse basic constraints for CA flag
+    if (ext.id === '2.5.29.19' || ext.name === 'basicConstraints') {
+      try {
+        const bcAsn1 = forge.asn1.fromDer(ext.value);
+        if (bcAsn1.value && bcAsn1.value.length > 0) {
+          ext.cA = bcAsn1.value[0].type === forge.asn1.Type.BOOLEAN &&
+                   bcAsn1.value[0].value.charCodeAt(0) !== 0;
+        }
+      } catch (e) {
+        // Ignore parsing errors for extensions
+        console.debug('Failed to parse basicConstraints extension:', e);
+      }
+    }
+    
+    extensions.push(ext);
+  }
+  
+  return extensions;
+}
+
+/**
+ * Safely convert certificate to PEM, handling non-RSA keys
+ */
+function safeCertificateToPem(asn1) {
+  // For certificates with non-RSA keys, we need to convert the raw ASN.1 back to PEM
+  // since certificateToPem won't work with our manually parsed certificate
+  const der = forge.asn1.toDer(asn1);
+  const pem = forge.util.encode64(der.getBytes(), 64);
+  return '-----BEGIN CERTIFICATE-----\n' + pem + '\n-----END CERTIFICATE-----';
+}
+
 // Try to parse PEM format
 function parsePEM(data) {
   const certificates = [];
@@ -31,7 +227,17 @@ function parsePEM(data) {
         
         if (blockType.includes('CERTIFICATE')) {
           try {
-            const cert = forge.pki.certificateFromPem(pemBlock);
+            // Extract the base64 content from PEM
+            const pemContent = pemBlock
+              .replace(/-----BEGIN CERTIFICATE-----/, '')
+              .replace(/-----END CERTIFICATE-----/, '')
+              .replace(/\s/g, '');
+            const der = forge.util.decode64(pemContent);
+            const asn1 = forge.asn1.fromDer(der);
+            
+            // Use safe parsing that handles non-RSA keys
+            const cert = safeCertificateFromAsn1(asn1);
+            
             certificates.push({
               type: 'certificate',
               data: cert,
@@ -67,8 +273,8 @@ function parseDER(arrayBuffer) {
   
   try {
     const asn1 = forge.asn1.fromDer(forge.util.createBuffer(arrayBuffer));
-    const cert = forge.pki.certificateFromAsn1(asn1);
-    const pem = forge.pki.certificateToPem(cert);
+    const cert = safeCertificateFromAsn1(asn1);
+    const pem = safeCertificateToPem(asn1);
     
     certificates.push({
       type: 'certificate',
@@ -97,12 +303,28 @@ async function parsePKCS12(arrayBuffer, password = '') {
     for (const bagType in certBags) {
       for (const bag of certBags[bagType]) {
         if (bag.cert) {
-          const pem = forge.pki.certificateToPem(bag.cert);
-          certificates.push({
-            type: 'certificate',
-            data: bag.cert,
-            pem: pem,
-          });
+          try {
+            // Try standard PEM conversion
+            const pem = forge.pki.certificateToPem(bag.cert);
+            certificates.push({
+              type: 'certificate',
+              data: bag.cert,
+              pem: pem,
+            });
+          } catch (e) {
+            // For non-RSA certificates, convert from ASN.1
+            if (bag.asn1) {
+              const cert = safeCertificateFromAsn1(bag.asn1);
+              const pem = safeCertificateToPem(bag.asn1);
+              certificates.push({
+                type: 'certificate',
+                data: cert,
+                pem: pem,
+              });
+            } else {
+              console.warn('Failed to convert PKCS#12 certificate to PEM:', e);
+            }
+          }
         }
       }
     }
