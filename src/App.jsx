@@ -16,7 +16,7 @@ function App() {
   const [pendingFile, setPendingFile] = useState(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [error, setError] = useState(null);
-  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [dragCounter, setDragCounter] = useState(0);
 
   const processFile = async (file, password = null) => {
     try {
@@ -114,19 +114,27 @@ function App() {
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDraggingOver(true);
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragCounter(prev => prev + 1);
   };
 
   const handleDragLeave = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDraggingOver(false);
+    setDragCounter(prev => {
+      const newCount = prev - 1;
+      return newCount;
+    });
   };
 
   const handleDrop = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDraggingOver(false);
+    setDragCounter(0);
     
     const files = Array.from(e.dataTransfer.files);
     await handleFilesDropped(files);
@@ -134,8 +142,9 @@ function App() {
 
   return (
     <div 
-      className={`app ${isDraggingOver ? 'dragging-over' : ''}`}
+      className={`app ${dragCounter > 0 ? 'dragging-over' : ''}`}
       onDragOver={handleDragOver}
+      onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
