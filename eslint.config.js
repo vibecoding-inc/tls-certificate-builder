@@ -36,6 +36,7 @@ export default [
       ecmaVersion: 2022,
       globals: {
         ...globals.node,
+        ...globals.jest,
       },
       parserOptions: {
         ecmaVersion: 'latest',
