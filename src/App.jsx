@@ -16,6 +16,7 @@ function App() {
   const [pendingFile, setPendingFile] = useState(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [error, setError] = useState(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   const processFile = async (file, password = null) => {
     try {
@@ -110,8 +111,34 @@ function App() {
     setError(null);
   };
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    await handleFilesDropped(files);
+  };
+
   return (
-    <div className="app">
+    <div 
+      className={`app ${isDraggingOver ? 'dragging-over' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <header className="app-header">
         <h1>🔐 TLS Certificate Builder</h1>
         <p>Drag and drop certificate files to visualize and build nginx-ready certificate chains</p>
