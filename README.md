@@ -40,6 +40,12 @@ npm run build
 npm run preview
 ```
 
+### Run Tests
+
+```bash
+npm test
+```
+
 ## Usage
 
 1. **Drop or Upload Files**: Drag and drop certificate files onto the drop zone, or click "Browse Files" to select them
