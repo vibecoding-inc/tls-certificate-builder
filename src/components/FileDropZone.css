@@ -1,0 +1,67 @@
+.file-drop-zone {
+  border: 3px dashed #ccc;
+  border-radius: 12px;
+  padding: 60px 40px;
+  text-align: center;
+  transition: all 0.3s ease;
+  background: #fafafa;
+  cursor: pointer;
+  margin: 20px 0;
+}
+
+.file-drop-zone.dragging {
+  border-color: #4CAF50;
+  background: #e8f5e9;
+  transform: scale(1.02);
+}
+
+.drop-zone-content {
+  pointer-events: none;
+}
+
+.drop-zone-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.file-drop-zone h2 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 24px;
+}
+
+.file-drop-zone p {
+  margin: 5px 0;
+  color: #666;
+  font-size: 14px;
+}
+
+.or-text {
+  margin: 20px 0;
+  font-weight: 600;
+  color: #999;
+}
+
+.file-input-label {
+  pointer-events: auto;
+  display: inline-block;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-input-button {
+  display: inline-block;
+  padding: 12px 30px;
+  background: #2196F3;
+  color: white;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.file-input-button:hover {
+  background: #1976D2;
+}
