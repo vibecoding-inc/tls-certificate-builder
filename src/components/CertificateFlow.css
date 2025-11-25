@@ -1,0 +1,59 @@
+.certificate-flow-container {
+  height: 600px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  margin: 20px 0;
+}
+
+.certificate-flow-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  background: #f5f5f5;
+  border-bottom: 1px solid #ddd;
+}
+
+.certificate-flow-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.download-button {
+  padding: 10px 20px;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.download-button:hover {
+  background: #45a049;
+}
+
+.certificate-flow {
+  height: calc(100% - 60px);
+  background: #fafafa;
+}
+
+.certificate-flow-empty {
+  height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fafafa;
+  color: #999;
+  margin: 20px 0;
+}
+
+.certificate-flow-empty p {
+  font-size: 16px;
+}

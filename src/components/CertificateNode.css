@@ -1,0 +1,62 @@
+.certificate-node {
+  background: white;
+  border: 2px solid #2196F3;
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 280px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.certificate-node.ca-cert {
+  border-color: #FF9800;
+}
+
+.certificate-node.end-entity {
+  border-color: #4CAF50;
+}
+
+.cert-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.cert-icon {
+  font-size: 24px;
+  margin-right: 10px;
+}
+
+.cert-type {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.cert-info {
+  font-size: 12px;
+}
+
+.cert-field {
+  margin-bottom: 8px;
+}
+
+.cert-field strong {
+  display: block;
+  color: #666;
+  font-size: 11px;
+  margin-bottom: 2px;
+}
+
+.cert-value {
+  color: #333;
+  word-break: break-word;
+}
+
+.cert-value.serial {
+  font-family: monospace;
+  font-size: 10px;
+  color: #666;
+}
