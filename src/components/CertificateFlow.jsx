@@ -23,12 +23,12 @@ function CertificateFlow({ certificates, privateKeys, onDownloadChain }) {
   const initialNodes = useMemo(() => {
     const nodes = [];
     
-    // Add certificate nodes
+    // Add certificate nodes horizontally
     certificates.forEach((cert, index) => {
       nodes.push({
         id: `cert-${index}`,
         type: 'certificate',
-        position: { x: 250, y: index * 200 },
+        position: { x: index * 350, y: 100 },
         data: { 
           certificate: cert,
           index: index,
@@ -36,12 +36,12 @@ function CertificateFlow({ certificates, privateKeys, onDownloadChain }) {
       });
     });
 
-    // Add private key nodes
+    // Add private key nodes horizontally
     privateKeys.forEach((key, index) => {
       nodes.push({
         id: `key-${index}`,
         type: 'privateKey',
-        position: { x: 50, y: index * 200 },
+        position: { x: index * 350, y: 300 },
         data: { 
           privateKey: key,
           index: index,
@@ -67,6 +67,8 @@ function CertificateFlow({ certificates, privateKeys, onDownloadChain }) {
           id: `e-cert-${i}-${i + 1}`,
           source: `cert-${i}`,
           target: `cert-${i + 1}`,
+          sourcePosition: 'right',
+          targetPosition: 'left',
           label: 'issued by',
           animated: true,
           markerEnd: {

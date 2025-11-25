@@ -16,6 +16,7 @@ function App() {
   const [pendingFile, setPendingFile] = useState(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [error, setError] = useState(null);
+  const [dragCounter, setDragCounter] = useState(0);
 
   const processFile = async (file, password = null) => {
     try {
@@ -110,63 +111,110 @@ function App() {
     setError(null);
   };
 
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragCounter(prev => prev + 1);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragCounter(prev => {
+      const newCount = prev - 1;
+      return newCount;
+    });
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragCounter(0);
+    
+    const files = Array.from(e.dataTransfer.files);
+    await handleFilesDropped(files);
+  };
+
   return (
-    <div className="app">
+    <div 
+      className={`app ${dragCounter > 0 ? 'dragging-over' : ''}`}
+      onDragOver={handleDragOver}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <header className="app-header">
-        <h1>🔐 TLS Certificate Builder</h1>
-        <p>Drag and drop certificate files to visualize and build nginx-ready certificate chains</p>
+        {(certificates.length === 0 && privateKeys.length === 0) ? (
+          <>
+            <h1>🔐 TLS Certificate Builder</h1>
+            <p>Drag and drop certificate files to visualize and build nginx-ready certificate chains</p>
+          </>
+        ) : (
+          <h2 className="app-header-small">🔐 TLS Certificate Builder</h2>
+        )}
       </header>
 
       <main className="app-main">
-        <FileDropZone onFilesDropped={handleFilesDropped} />
-
-        {error && (
-          <div className="error-message">
-            <span className="error-icon">⚠️</span>
-            {error}
-            <button onClick={() => setError(null)} className="close-error">×</button>
+        <div className="layout-container">
+          <div className="left-panel">
+            <CertificateFlow
+              certificates={certificates}
+              privateKeys={privateKeys}
+              onDownloadChain={handleDownloadChain}
+            />
           </div>
-        )}
 
-        {(certificates.length > 0 || privateKeys.length > 0) && (
-          <div className="summary-bar">
-            <div className="summary-info">
-              <span>📄 {certificates.length} Certificate(s)</span>
-              <span>🔑 {privateKeys.length} Private Key(s)</span>
-            </div>
-            <button onClick={handleClearAll} className="clear-button">
-              Clear All
-            </button>
-          </div>
-        )}
+          <div className="right-panel">
+            <FileDropZone onFilesDropped={handleFilesDropped} />
 
-        <CertificateFlow
-          certificates={certificates}
-          privateKeys={privateKeys}
-          onDownloadChain={handleDownloadChain}
-        />
-
-        {certificates.length > 0 && (
-          <div className="certificate-details">
-            <h3>Certificate Details</h3>
-            {certificates.map((cert, index) => (
-              <div key={index} className="cert-detail-card">
-                <div className="cert-detail-header">
-                  <strong>{cert.info.subjectCommonName}</strong>
-                  <span className="cert-tag">
-                    {cert.info.isSelfSigned ? 'Root' : cert.info.isCA ? 'Intermediate' : 'End Entity'}
-                  </span>
-                </div>
-                <div className="cert-detail-info">
-                  <div><strong>File:</strong> {cert.fileName}</div>
-                  <div><strong>Issuer:</strong> {cert.info.issuerCommonName}</div>
-                  <div><strong>Valid:</strong> {new Date(cert.info.validFrom).toLocaleDateString()} - {new Date(cert.info.validTo).toLocaleDateString()}</div>
-                  <div><strong>Serial:</strong> <code>{cert.info.serialNumber}</code></div>
-                </div>
+            {error && (
+              <div className="error-message">
+                <span className="error-icon">⚠️</span>
+                {error}
+                <button onClick={() => setError(null)} className="close-error">×</button>
               </div>
-            ))}
+            )}
+
+            {(certificates.length > 0 || privateKeys.length > 0) && (
+              <div className="summary-bar">
+                <div className="summary-info">
+                  <span>📄 {certificates.length} Certificate(s)</span>
+                  <span>🔑 {privateKeys.length} Private Key(s)</span>
+                </div>
+                <button onClick={handleClearAll} className="clear-button">
+                  Clear All
+                </button>
+              </div>
+            )}
+
+            {certificates.length > 0 && (
+              <div className="certificate-details">
+                <h3>Certificate Details</h3>
+                {certificates.map((cert, index) => (
+                  <div key={index} className="cert-detail-card">
+                    <div className="cert-detail-header">
+                      <strong>{cert.info.subjectCommonName}</strong>
+                      <span className="cert-tag">
+                        {cert.info.isSelfSigned ? 'Root' : cert.info.isCA ? 'Intermediate' : 'End Entity'}
+                      </span>
+                    </div>
+                    <div className="cert-detail-info">
+                      <div><strong>File:</strong> {cert.fileName}</div>
+                      <div><strong>Issuer:</strong> {cert.info.issuerCommonName}</div>
+                      <div><strong>Valid:</strong> {new Date(cert.info.validFrom).toLocaleDateString()} - {new Date(cert.info.validTo).toLocaleDateString()}</div>
+                      <div><strong>Serial:</strong> <code>{cert.info.serialNumber}</code></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </main>
 
       {showPasswordModal && (
