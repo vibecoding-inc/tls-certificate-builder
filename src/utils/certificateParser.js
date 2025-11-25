@@ -196,24 +196,28 @@ export async function parseCertificateFile(file, password = null) {
               throw error;
             }
           }
-        } else if (fileExtension === 'der' || fileExtension === 'crt' || fileExtension === 'cer') {
-          // Try DER first
+        } else if (fileExtension === 'der') {
+          // DER is always binary
+          result = parseDER(e.target.result);
+        } else if (fileExtension === 'crt' || fileExtension === 'cer') {
+          // CRT/CER can be either DER or PEM
+          // We read as ArrayBuffer, try DER first
           try {
             result = parseDER(e.target.result);
           } catch {
-            // If DER fails, try PEM (read as text)
+            // If DER fails, re-read as text and try PEM
             const textReader = new FileReader();
             textReader.onload = (te) => {
               result = parsePEM(te.target.result);
               resolve(result);
             };
+            textReader.onerror = () => reject(new Error('Failed to read file as text'));
             textReader.readAsText(file);
             return;
           }
         } else {
-          // Default to PEM (text-based)
-          const textData = new TextDecoder().decode(e.target.result);
-          result = parsePEM(textData);
+          // Default to PEM (text-based) - file is already read as text
+          result = parsePEM(e.target.result);
         }
         
         resolve(result);
@@ -224,11 +228,14 @@ export async function parseCertificateFile(file, password = null) {
     
     reader.onerror = () => reject(new Error('Failed to read file'));
     
-    // Read as ArrayBuffer for binary formats
-    if (fileExtension === 'pfx' || fileExtension === 'p12' || 
-        fileExtension === 'der' || fileExtension === 'crt' || fileExtension === 'cer') {
+    // Read as ArrayBuffer only for binary formats
+    if (fileExtension === 'pfx' || fileExtension === 'p12' || fileExtension === 'der') {
+      reader.readAsArrayBuffer(file);
+    } else if (fileExtension === 'crt' || fileExtension === 'cer') {
+      // CRT/CER can be binary or text, try binary first
       reader.readAsArrayBuffer(file);
     } else {
+      // Default to text for PEM and other text-based formats
       reader.readAsText(file);
     }
   });
