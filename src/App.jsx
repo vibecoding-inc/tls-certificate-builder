@@ -149,8 +149,14 @@ function App() {
       onDrop={handleDrop}
     >
       <header className="app-header">
-        <h1>🔐 TLS Certificate Builder</h1>
-        <p>Drag and drop certificate files to visualize and build nginx-ready certificate chains</p>
+        {(certificates.length === 0 && privateKeys.length === 0) ? (
+          <>
+            <h1>🔐 TLS Certificate Builder</h1>
+            <p>Drag and drop certificate files to visualize and build nginx-ready certificate chains</p>
+          </>
+        ) : (
+          <h2 className="app-header-small">🔐 TLS Certificate Builder</h2>
+        )}
       </header>
 
       <main className="app-main">

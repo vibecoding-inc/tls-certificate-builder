@@ -67,6 +67,8 @@ function CertificateFlow({ certificates, privateKeys, onDownloadChain }) {
           id: `e-cert-${i}-${i + 1}`,
           source: `cert-${i}`,
           target: `cert-${i + 1}`,
+          sourcePosition: 'right',
+          targetPosition: 'left',
           label: 'issued by',
           animated: true,
           markerEnd: {

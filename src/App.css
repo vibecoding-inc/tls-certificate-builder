@@ -72,6 +72,11 @@
   animation: fadeInDown 0.5s ease-out;
   position: relative;
   z-index: 1;
+  transition: padding 0.3s ease;
+}
+
+.app-header:has(.app-header-small) {
+  padding: 15px 20px 10px;
 }
 
 @keyframes fadeInDown {
@@ -86,7 +91,7 @@
 }
 
 .app-header h1 {
-  font-size: 42px;
+  font-size: 32px;
   margin-bottom: 10px;
   font-weight: 800;
   background: linear-gradient(120deg, #ffffff 0%, #e0e7ff 25%, #fce4ec 50%, #ffffff 75%, #e0e7ff 100%);
@@ -98,6 +103,19 @@
   filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
   transform-style: preserve-3d;
   transition: transform 0.3s ease;
+}
+
+.app-header-small {
+  font-size: 22px;
+  margin: 0;
+  font-weight: 700;
+  background: linear-gradient(120deg, #ffffff 0%, #e0e7ff 25%, #fce4ec 50%, #ffffff 75%, #e0e7ff 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: superShimmer 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.5));
 }
 
 .app-header h1:hover {
@@ -347,6 +365,7 @@
   font-size: 15px;
   position: relative;
   z-index: 1;
+  min-height: 50px;
 }
 
 .clear-button {
