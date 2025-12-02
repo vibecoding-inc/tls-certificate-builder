@@ -87,9 +87,32 @@ src/
 │   ├── PrivateKeyNode.jsx      # Private key node component
 │   └── PasswordModal.jsx       # Password input dialog
 ├── utils/
-│   └── certificateParser.js    # Certificate parsing logic
+│   ├── certificateParser.js    # Certificate parsing logic
+│   └── dataJoin.js             # Data join utilities (INNER JOIN)
 ├── App.jsx                     # Main application component
 └── main.jsx                    # Application entry point
+```
+
+### Data Join Utilities
+
+The project includes SQL-like INNER JOIN operations for working with certificate and key data:
+
+- **`innerJoinOn(leftArray, rightArray, onCondition)`**: Join two arrays using a custom condition function
+- **`innerJoinUsing(leftArray, rightArray, keys)`**: Join two arrays by matching specific key(s)
+- **`joinCertificatesWithKeys(certificates, privateKeys)`**: Helper to match certificates with their private keys
+
+Example usage:
+```javascript
+import { innerJoinOn, innerJoinUsing, joinCertificatesWithKeys } from './utils/dataJoin';
+
+// Join with custom condition (ON clause)
+const result = innerJoinOn(users, roles, (user, role) => user.roleId === role.id);
+
+// Join by matching keys (USING clause)
+const result = innerJoinUsing(certificates, keys, 'fileName');
+
+// Match certificates with keys
+const pairs = joinCertificatesWithKeys(certificates, privateKeys);
 ```
 
 ## License

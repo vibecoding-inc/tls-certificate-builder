@@ -75,20 +75,23 @@ export function innerJoinUsing(leftArray, rightArray, keys) {
 }
 
 /**
- * Helper function to join certificates with private keys based on common name
+ * Helper function to join certificates with private keys based on fileName
  * This is a practical use case for certificate management
- * @param {Array} certificates - Array of certificate objects with info property
- * @param {Array} privateKeys - Array of private key objects
+ * @param {Array} certificates - Array of certificate objects with fileName property
+ * @param {Array} privateKeys - Array of private key objects with fileName property
  * @returns {Array} Array of matched certificate-key pairs
  */
 export function joinCertificatesWithKeys(certificates, privateKeys) {
-  // Match by fileName
-  return innerJoinUsing(
-    certificates.map(c => ({ ...c, key: c.fileName })),
-    privateKeys.map(k => ({ ...k, key: k.fileName })),
-    'key'
-  ).map(({ left, right }) => ({
-    certificate: left,
-    privateKey: right
-  }));
+  // Match by fileName using a more efficient direct implementation
+  const result = [];
+  
+  for (const cert of certificates) {
+    for (const key of privateKeys) {
+      if (cert.fileName === key.fileName) {
+        result.push({ certificate: cert, privateKey: key });
+      }
+    }
+  }
+  
+  return result;
 }
