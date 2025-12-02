@@ -4,6 +4,9 @@ import forge from 'node-forge';
  * Parse certificate files and extract certificate information
  */
 
+// Re-export join utilities for convenience
+export { innerJoinOn, innerJoinUsing, joinCertificatesWithKeys } from './dataJoin.js';
+
 /**
  * Parse certificate from ASN.1 with support for non-RSA keys (EC, EdDSA, etc.)
  * This function manually extracts certificate information without relying on
