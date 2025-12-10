@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Rust build artifacts
+cert-wasm/target/
+cert-wasm/Cargo.lock
+
+# WASM build output (generated from cert-wasm)
+# Note: This is built automatically via npm scripts
+pkg/
