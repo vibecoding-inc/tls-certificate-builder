@@ -160,38 +160,39 @@ fn extract_cert_info(cert: &X509Certificate) -> CertificateInfo {
     let mut subject_map = HashMap::new();
     let mut issuer_map = HashMap::new();
 
-    for attr in cert.subject().iter_attributes() {
-        if let Ok(value) = attr.attr_value().as_str() {
-            let key = attr.attr_type().to_id_string();
-            subject_map.insert(key.clone(), value.to_string());
-            
-            // Also add common name shortcuts
-            if key == "2.5.4.3" {
-                subject_map.insert("CN".to_string(), value.to_string());
+    // Extract common name from subject
+    let mut subject_common_name = String::from("Unknown");
+    for rdn in cert.subject().iter() {
+        for attr in rdn.iter() {
+            if let Ok(value_str) = attr.attr_value().as_str() {
+                let oid_str = attr.attr_type().to_id_string();
+                subject_map.insert(oid_str.clone(), value_str.to_string());
+                
+                // CN OID is 2.5.4.3
+                if oid_str.ends_with("2.5.4.3") {
+                    subject_common_name = value_str.to_string();
+                    subject_map.insert("CN".to_string(), value_str.to_string());
+                }
             }
         }
     }
 
-    for attr in cert.issuer().iter_attributes() {
-        if let Ok(value) = attr.attr_value().as_str() {
-            let key = attr.attr_type().to_id_string();
-            issuer_map.insert(key.clone(), value.to_string());
-            
-            if key == "2.5.4.3" {
-                issuer_map.insert("CN".to_string(), value.to_string());
+    // Extract common name from issuer  
+    let mut issuer_common_name = String::from("Unknown");
+    for rdn in cert.issuer().iter() {
+        for attr in rdn.iter() {
+            if let Ok(value_str) = attr.attr_value().as_str() {
+                let oid_str = attr.attr_type().to_id_string();
+                issuer_map.insert(oid_str.clone(), value_str.to_string());
+                
+                // CN OID is 2.5.4.3
+                if oid_str.ends_with("2.5.4.3") {
+                    issuer_common_name = value_str.to_string();
+                    issuer_map.insert("CN".to_string(), value_str.to_string());
+                }
             }
         }
     }
-
-    let subject_common_name = subject_map.get("CN")
-        .or_else(|| subject_map.get("2.5.4.3"))
-        .cloned()
-        .unwrap_or_else(|| "Unknown".to_string());
-
-    let issuer_common_name = issuer_map.get("CN")
-        .or_else(|| issuer_map.get("2.5.4.3"))
-        .cloned()
-        .unwrap_or_else(|| "Unknown".to_string());
 
     let serial_number = cert.serial.to_str_radix(16);
     

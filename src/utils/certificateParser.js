@@ -70,6 +70,11 @@ export function buildCertificateChain(certificates) {
   // Call WASM function
   const chains = buildCertificateChainWasm(certInfos);
   
+  // Handle null or empty chains
+  if (!chains || chains.length === 0) {
+    return [];
+  }
+  
   // Transform chain indices back to certificate objects
   return chains.map(chain => 
     chain.map(index => ({

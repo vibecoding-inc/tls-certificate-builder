@@ -46,7 +46,7 @@ describe('Certificate Parser Tests', () => {
   test('Parse ECDSA certificate (Google)', async () => {
     mockFileReader(GOOGLE_ECDSA_CERT);
     
-    const fakeFile = { name: 'google.pem', size: GOOGLE_ECDSA_CERT.length };
+    const fakeFile = { name: 'google.pem', size: GOOGLE_ECDSA_CERT.length, content: GOOGLE_ECDSA_CERT };
     const result = await parseCertificateFile(fakeFile);
     
     expect(result.certificates.length).toBe(1);
@@ -56,23 +56,19 @@ describe('Certificate Parser Tests', () => {
     expect(cert.data).toBeDefined();
     expect(cert.pem).toBeDefined();
     
-    // Check certificate fields
-    const cn = cert.data.subject.getField('CN');
-    expect(cn?.value).toBe('www.google.com');
-    
-    const issuerCn = cert.data.issuer.getField('CN');
-    expect(issuerCn?.value).toBe('WE2');
-    
-    expect(cert.data.serialNumber).toBeDefined();
-    expect(cert.data.validity).toBeDefined();
-    expect(cert.data.validity.notBefore).toBeDefined();
-    expect(cert.data.validity.notAfter).toBeDefined();
+    // Check certificate fields - WASM returns parsed info directly
+    const info = extractCertificateInfo(cert.data);
+    expect(info.subjectCommonName).toBe('www.google.com');
+    expect(info.issuerCommonName).toBe('WE2');
+    expect(info.serialNumber).toBeDefined();
+    expect(info.validFrom).toBeDefined();
+    expect(info.validTo).toBeDefined();
   });
 
   test('Parse RSA certificate', async () => {
     mockFileReader(RSA_CERT);
     
-    const fakeFile = { name: 'rsa.pem', size: RSA_CERT.length };
+    const fakeFile = { name: 'rsa.pem', size: RSA_CERT.length, content: RSA_CERT };
     const result = await parseCertificateFile(fakeFile);
     
     expect(result.certificates.length).toBe(1);
@@ -80,39 +76,40 @@ describe('Certificate Parser Tests', () => {
     const cert = result.certificates[0];
     expect(cert.type).toBe('certificate');
     
-    // RSA cert might not have CN, check if it exists or has other fields
-    expect(cert.data.subject.attributes.length).toBeGreaterThan(0);
-    expect(cert.data.issuer.attributes.length).toBeGreaterThan(0);
+    // WASM returns parsed info directly
+    const info = extractCertificateInfo(cert.data);
+    expect(info.subject).toBeDefined();
+    expect(info.issuer).toBeDefined();
   });
 
   test('Parse certificate chain (multiple certs)', async () => {
     mockFileReader(CERT_CHAIN);
     
-    const fakeFile = { name: 'chain.pem', size: CERT_CHAIN.length };
+    const fakeFile = { name: 'chain.pem', size: CERT_CHAIN.length, content: CERT_CHAIN };
     const result = await parseCertificateFile(fakeFile);
     
     expect(result.certificates.length).toBe(3);
     
     // Check first cert (leaf)
     const leaf = result.certificates[0];
-    const leafCn = leaf.data.subject.getField('CN');
-    expect(leafCn?.value).toBe('www.google.com');
+    const leafInfo = extractCertificateInfo(leaf.data);
+    expect(leafInfo.subjectCommonName).toBe('www.google.com');
     
     // Check second cert (intermediate)
     const intermediate = result.certificates[1];
-    const intermediateCn = intermediate.data.subject.getField('CN');
-    expect(intermediateCn?.value).toBe('WE2');
+    const intermediateInfo = extractCertificateInfo(intermediate.data);
+    expect(intermediateInfo.subjectCommonName).toBe('WE2');
     
     // Check third cert (root)
     const root = result.certificates[2];
-    const rootCn = root.data.subject.getField('CN');
-    expect(rootCn?.value).toBe('GTS Root R4');
+    const rootInfo = extractCertificateInfo(root.data);
+    expect(rootInfo.subjectCommonName).toBe('GTS Root R4');
   });
 
   test('Extract certificate info', async () => {
     mockFileReader(GOOGLE_ECDSA_CERT);
     
-    const fakeFile = { name: 'google.pem', size: GOOGLE_ECDSA_CERT.length };
+    const fakeFile = { name: 'google.pem', size: GOOGLE_ECDSA_CERT.length, content: GOOGLE_ECDSA_CERT };
     const result = await parseCertificateFile(fakeFile);
     const cert = result.certificates[0].data;
     
@@ -133,7 +130,7 @@ describe('Certificate Parser Tests', () => {
   test('Build certificate chain', async () => {
     mockFileReader(CERT_CHAIN);
     
-    const fakeFile = { name: 'chain.pem', size: CERT_CHAIN.length };
+    const fakeFile = { name: 'chain.pem', size: CERT_CHAIN.length, content: CERT_CHAIN };
     const result = await parseCertificateFile(fakeFile);
     
     const chains = buildCertificateChain(result.certificates);
@@ -150,7 +147,7 @@ describe('Certificate Parser Tests', () => {
   test('PEM format is preserved', async () => {
     mockFileReader(GOOGLE_ECDSA_CERT);
     
-    const fakeFile = { name: 'google.pem', size: GOOGLE_ECDSA_CERT.length };
+    const fakeFile = { name: 'google.pem', size: GOOGLE_ECDSA_CERT.length, content: GOOGLE_ECDSA_CERT };
     const result = await parseCertificateFile(fakeFile);
     
     const pem = result.certificates[0].pem;
@@ -162,7 +159,7 @@ describe('Certificate Parser Tests', () => {
   test('Parse .pem file', async () => {
     mockFileReader(GOOGLE_ECDSA_CERT);
     
-    const fakeFile = { name: 'cert.pem', size: GOOGLE_ECDSA_CERT.length };
+    const fakeFile = { name: 'cert.pem', size: GOOGLE_ECDSA_CERT.length, content: GOOGLE_ECDSA_CERT };
     const result = await parseCertificateFile(fakeFile);
     
     expect(result.certificates.length).toBe(1);
