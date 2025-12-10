@@ -1,0 +1,1 @@
+Result<std::option::Option<BasicExtension<&x509_parser::extensions::BasicConstraints>>, X509Error>
