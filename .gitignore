@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Rust/WASM build artifacts
+target/
+Cargo.lock
+cert-parser-wasm/target/
+cert-parser-wasm/Cargo.lock
+cert-parser-wasm/pkg/
+.cargo/
