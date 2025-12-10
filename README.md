@@ -101,12 +101,33 @@ tests/
 
 ### Building the WASM Module
 
-The certificate parser is implemented in Rust and compiled to WebAssembly for optimal performance. The build system generates two targets:
+The certificate parser is implemented in Rust and compiled to WebAssembly for optimal performance. The build system automatically generates two targets:
 
 - `pkg/` - Node.js target for testing
 - `pkg-web/` - Web target for production
 
-To rebuild the WASM module:
+**The WASM build is integrated into npm scripts and happens automatically:**
+
+```bash
+# Build for production (automatically builds WASM first)
+npm run build
+
+# Run tests (automatically builds Node.js WASM first)
+npm test
+
+# Build only WASM modules (both targets)
+npm run build:wasm
+
+# Build individual targets
+npm run build:wasm:nodejs  # For tests
+npm run build:wasm:web     # For production
+```
+
+The appropriate WASM module is automatically loaded based on the environment (Node.js for tests, browser for production).
+
+**Manual WASM build (optional):**
+
+If you need to manually build the WASM modules:
 
 ```bash
 # Install wasm-pack if not already installed
@@ -114,21 +135,10 @@ cargo install wasm-pack
 
 # Build both targets
 cd cert-parser-wasm
-
-# Build for Node.js (tests)
 wasm-pack build --target nodejs --out-dir pkg
-
-# Build for web (production)
 wasm-pack build --target web --out-dir pkg-web
-
-# Return to project root
 cd ..
-
-# Build the application
-npm run build
 ```
-
-The appropriate WASM module is automatically loaded based on the environment (Node.js for tests, browser for production).
 
 ### Running Tests
 
