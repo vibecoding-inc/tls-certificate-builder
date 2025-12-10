@@ -1,5 +1,7 @@
 /**
  * Tests for certificate parser
+ * Note: These tests use the legacy node-forge parser since WASM requires a browser environment.
+ * The production build uses the WASM parser which is tested manually.
  */
 
 import { parseCertificateFile, extractCertificateInfo, buildCertificateChain } from '../src/utils/certificateParser.js';

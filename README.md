@@ -64,7 +64,7 @@ npm test
 - **React 19**: Modern React with hooks
 - **Vite**: Fast build tool and dev server
 - **React Flow**: Interactive node-based UI for visualizing certificate chains
-- **node-forge**: Certificate parsing and cryptographic operations
+- **Rust + WebAssembly**: High-performance certificate parsing and cryptographic operations compiled to WASM
 - **Client-Side Only**: No server required, all processing in the browser
 
 ## Security Notes
@@ -87,10 +87,36 @@ src/
 │   ├── PrivateKeyNode.jsx      # Private key node component
 │   └── PasswordModal.jsx       # Password input dialog
 ├── utils/
-│   └── certificateParser.js    # Certificate parsing logic
+│   ├── certificateParser.js    # Legacy certificate parsing logic (for tests)
+│   └── certificateParserWasm.js # WASM wrapper for production
 ├── App.jsx                     # Main application component
 └── main.jsx                    # Application entry point
+
+cert-parser-wasm/
+└── src/
+    └── lib.rs                  # Rust WASM certificate parser implementation
 ```
+
+### Building the WASM Module
+
+The certificate parser is implemented in Rust and compiled to WebAssembly for optimal performance. To rebuild the WASM module:
+
+```bash
+# Install wasm-pack if not already installed
+cargo install wasm-pack
+
+# Build the WASM module
+cd cert-parser-wasm
+wasm-pack build --target web
+
+# Return to project root
+cd ..
+
+# Build the application
+npm run build
+```
+
+The WASM module is automatically included in the build process.
 
 ## License
 
