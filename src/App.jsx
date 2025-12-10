@@ -8,7 +8,7 @@ import {
   extractCertificateInfo, 
   buildCertificateChain,
   generateNginxFormat 
-} from './utils/certificateParserWasm';
+} from './utils/certificateParser';
 
 function App() {
   const [certificates, setCertificates] = useState([]);

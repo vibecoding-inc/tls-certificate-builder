@@ -29,4 +29,5 @@ Cargo.lock
 cert-parser-wasm/target/
 cert-parser-wasm/Cargo.lock
 cert-parser-wasm/pkg/
+cert-parser-wasm/pkg-web/
 .cargo/

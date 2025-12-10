@@ -87,27 +87,39 @@ src/
 │   ├── PrivateKeyNode.jsx      # Private key node component
 │   └── PasswordModal.jsx       # Password input dialog
 ├── utils/
-│   ├── certificateParser.js    # Legacy certificate parsing logic (for tests)
-│   └── certificateParserWasm.js # WASM wrapper for production
+│   └── certificateParser.js    # WASM wrapper for certificate parsing
 ├── App.jsx                     # Main application component
 └── main.jsx                    # Application entry point
 
 cert-parser-wasm/
 └── src/
     └── lib.rs                  # Rust WASM certificate parser implementation
+
+tests/
+└── certificateParser.test.js   # Comprehensive tests for certificate parsing and chain building
 ```
 
 ### Building the WASM Module
 
-The certificate parser is implemented in Rust and compiled to WebAssembly for optimal performance. To rebuild the WASM module:
+The certificate parser is implemented in Rust and compiled to WebAssembly for optimal performance. The build system generates two targets:
+
+- `pkg/` - Node.js target for testing
+- `pkg-web/` - Web target for production
+
+To rebuild the WASM module:
 
 ```bash
 # Install wasm-pack if not already installed
 cargo install wasm-pack
 
-# Build the WASM module
+# Build both targets
 cd cert-parser-wasm
-wasm-pack build --target web
+
+# Build for Node.js (tests)
+wasm-pack build --target nodejs --out-dir pkg
+
+# Build for web (production)
+wasm-pack build --target web --out-dir pkg-web
 
 # Return to project root
 cd ..
@@ -116,7 +128,23 @@ cd ..
 npm run build
 ```
 
-The WASM module is automatically included in the build process.
+The appropriate WASM module is automatically loaded based on the environment (Node.js for tests, browser for production).
+
+### Running Tests
+
+The test suite includes comprehensive tests for certificate parsing and chain reconstruction:
+
+```bash
+npm test
+```
+
+Tests verify:
+- Parsing of PEM and DER formats
+- ECDSA and RSA certificate support
+- Certificate chain building from complete and partial chains
+- Reconstruction of chains from unordered certificates
+- Private key parsing
+- Mixed certificate and key file handling
 
 ## License
 
