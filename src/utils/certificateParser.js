@@ -50,7 +50,7 @@ export async function parseDER(derData) {
 }
 
 // Main function to parse any certificate file
-export async function parseCertificateFile(file, password = null) {
+export async function parseCertificateFile(file, _password = null) {
   await ensureWasmInit();
   
   const fileName = file.name.toLowerCase();
