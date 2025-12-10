@@ -64,7 +64,7 @@ npm test
 - **React 19**: Modern React with hooks
 - **Vite**: Fast build tool and dev server
 - **React Flow**: Interactive node-based UI for visualizing certificate chains
-- **node-forge**: Certificate parsing and cryptographic operations
+- **Rust + WebAssembly**: High-performance certificate parsing and cryptographic operations compiled to WASM
 - **Client-Side Only**: No server required, all processing in the browser
 
 ## Security Notes
@@ -87,10 +87,74 @@ src/
 │   ├── PrivateKeyNode.jsx      # Private key node component
 │   └── PasswordModal.jsx       # Password input dialog
 ├── utils/
-│   └── certificateParser.js    # Certificate parsing logic
+│   └── certificateParser.js    # WASM wrapper for certificate parsing
 ├── App.jsx                     # Main application component
 └── main.jsx                    # Application entry point
+
+cert-parser-wasm/
+└── src/
+    └── lib.rs                  # Rust WASM certificate parser implementation
+
+tests/
+└── certificateParser.test.js   # Comprehensive tests for certificate parsing and chain building
 ```
+
+### Building the WASM Module
+
+The certificate parser is implemented in Rust and compiled to WebAssembly for optimal performance. The build system automatically generates two targets:
+
+- `pkg/` - Node.js target for testing
+- `pkg-web/` - Web target for production
+
+**The WASM build is integrated into npm scripts and happens automatically:**
+
+```bash
+# Build for production (automatically builds WASM first)
+npm run build
+
+# Run tests (automatically builds Node.js WASM first)
+npm test
+
+# Build only WASM modules (both targets)
+npm run build:wasm
+
+# Build individual targets
+npm run build:wasm:nodejs  # For tests
+npm run build:wasm:web     # For production
+```
+
+The appropriate WASM module is automatically loaded based on the environment (Node.js for tests, browser for production).
+
+**Manual WASM build (optional):**
+
+If you need to manually build the WASM modules:
+
+```bash
+# Install wasm-pack if not already installed
+cargo install wasm-pack
+
+# Build both targets
+cd cert-parser-wasm
+wasm-pack build --target nodejs --out-dir pkg
+wasm-pack build --target web --out-dir pkg-web
+cd ..
+```
+
+### Running Tests
+
+The test suite includes comprehensive tests for certificate parsing and chain reconstruction:
+
+```bash
+npm test
+```
+
+Tests verify:
+- Parsing of PEM and DER formats
+- ECDSA and RSA certificate support
+- Certificate chain building from complete and partial chains
+- Reconstruction of chains from unordered certificates
+- Private key parsing
+- Mixed certificate and key file handling
 
 ## License
 

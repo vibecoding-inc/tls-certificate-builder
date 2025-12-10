@@ -5,14 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run build:wasm && vite build",
+    "build:wasm": "npm run build:wasm:nodejs && npm run build:wasm:web",
+    "build:wasm:nodejs": "cd cert-parser-wasm && cargo install wasm-pack --quiet 2>/dev/null || true && wasm-pack build --target nodejs --out-dir pkg",
+    "build:wasm:web": "cd cert-parser-wasm && cargo install wasm-pack --quiet 2>/dev/null || true && wasm-pack build --target web --out-dir pkg-web",
+    "prebuild": "npm run build:wasm",
+    "pretest": "npm run build:wasm:nodejs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
   },
   "dependencies": {
     "@xyflow/react": "^12.9.3",
-    "node-forge": "^1.3.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
