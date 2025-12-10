@@ -30,9 +30,12 @@ export async function parseCertificateFile(file, password = null) {
         
         // Try different formats based on extension and content
         if (fileExtension === 'pfx' || fileExtension === 'p12') {
-          // PKCS#12 not yet implemented in WASM, return needs password
-          result.needsPassword = true;
-          resolve(result);
+          // PKCS#12 not yet implemented in WASM
+          // TODO: Implement PKCS#12 support in Rust WASM backend
+          result.needsPassword = false;
+          result.certificates = [];
+          result.privateKeys = [];
+          reject(new Error('PKCS#12 (.pfx/.p12) format is not yet supported in WASM backend'));
           return;
         } else if (fileExtension === 'der') {
           // DER is always binary

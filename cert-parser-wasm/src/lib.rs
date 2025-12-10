@@ -218,11 +218,21 @@ pub fn build_certificate_chain(certs_json: JsValue) -> Result<JsValue, JsValue> 
         cert_map.insert(idx, cert);
     }
     
-    // Find leaf certificates (non-CA or self-signed)
+    // Find leaf certificates (end-entity certificates: non-CA and not self-signed)
     let mut leaves = Vec::new();
     for (idx, cert) in &cert_map {
-        if !cert.info.is_ca || cert.info.is_self_signed {
+        // A leaf certificate is an end-entity cert (not a CA) or if it's the only cert
+        if (!cert.info.is_ca && !cert.info.is_self_signed) || cert_map.len() == 1 {
             leaves.push(*idx);
+        }
+    }
+    
+    // If no leaves found, use all non-self-signed certs as potential leaves
+    if leaves.is_empty() {
+        for (idx, cert) in &cert_map {
+            if !cert.info.is_self_signed {
+                leaves.push(*idx);
+            }
         }
     }
     
@@ -249,14 +259,24 @@ pub fn build_certificate_chain(certs_json: JsValue) -> Result<JsValue, JsValue> 
                 break;
             }
             
-            // Find issuer
+            // Find issuer by matching issuer CN with subject CN
+            // Note: This is a simplified matching. Production systems should use
+            // full Distinguished Name matching or Authority Key Identifier extensions
             let mut found = false;
             for (idx, cert) in &cert_map {
-                if !visited.contains(idx) && 
-                   cert.info.subject_common_name == current_cert.info.issuer_common_name {
-                    current_idx = *idx;
-                    found = true;
-                    break;
+                if !visited.contains(idx) {
+                    // Match by Common Name and also check issuer organization if available
+                    let cn_match = cert.info.subject_common_name == current_cert.info.issuer_common_name;
+                    let org_match = match (cert.info.subject.get("O"), current_cert.info.issuer.get("O")) {
+                        (Some(subj_o), Some(iss_o)) => subj_o == iss_o,
+                        _ => true, // If no org, rely on CN match
+                    };
+                    
+                    if cn_match && org_match {
+                        current_idx = *idx;
+                        found = true;
+                        break;
+                    }
                 }
             }
             
